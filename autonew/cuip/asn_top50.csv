@@ -1,0 +1,5 @@
+IP地址,端口,TLS,数据中心,地区,城市,网络延迟,下载速度,ASN
+69.63.214.55,443,TRUE,LAX,US,California,,,AS906
+179.255.152.239,443,TRUE,LAX,US,California,,,AS906
+179.255.120.41,8443,TRUE,LAX,US,California,,,AS906
+179.253.224.216,443,TRUE,LAX,US,California,,,AS906
