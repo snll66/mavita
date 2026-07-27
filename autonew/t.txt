@@ -1,4 +1,4 @@
 turn://182.233.122.32:3478#TWisp
 turn://114.160.38.44:3478#JPisp
 turn://175.126.146.172:5349#KRisp
-https://secure.mse.waseda.ac.jp:443#TWisp1
+https://secure.mse.waseda.ac.jp:443#jpisp1
