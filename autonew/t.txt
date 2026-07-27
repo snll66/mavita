@@ -21,5 +21,6 @@ turn://51.174.123.252:3478#t016-Norway-14
 turn://193.36.178.33:3478#t017-Norway-15
 
 https://secure.mse.waseda.ac.jp:443#h-jpjy-1
+https://debrowser.umassmed.edu:443#h-usjy-1
 
 
