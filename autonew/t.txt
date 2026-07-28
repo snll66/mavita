@@ -23,8 +23,8 @@ https://secure.mse.waseda.ac.jp:443#h-jpjy-1
 https://60.43.40.233:443#h-jpjy-5
 
 https://debrowser.umassmed.edu:443#h-usjy-1
-https://97.154.175.97:443#h-usisp-m6%
-https://96.241.182.93:443#h-usisp-m9%
+https://97.154.175.97:443#h-usisp-m6
+https://96.241.182.93:443#h-usisp-m9
 https://128.84.46.176:443#h-usjy-84%
 
 https://129.234.186.135:443#h-ukisp-m10%
