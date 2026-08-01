@@ -1,1 +1,11 @@
-# AS25820 scan - no Cloudflare nodes found
+IP地址,端口,TLS,数据中心,地区,城市,网络延迟,下载速度,ASN
+65.49.231.15,443,TRUE,SEA,CA,British Columbia,,,AS25820
+212.50.233.73,443,TRUE,KIX,JP,Osaka,,,AS25820
+172.93.32.85,443,TRUE,YVR,CA,British Columbia,,,AS25820
+172.93.32.237,443,TRUE,YVR,CA,British Columbia,,,AS25820
+212.50.234.57,443,TRUE,KIX,JP,Osaka,,,AS25820
+150.242.90.62,443,TRUE,YVR,CA,British Columbia,,,AS25820
+150.242.90.148,443,TRUE,YVR,CA,British Columbia,,,AS25820
+65.49.231.245,443,TRUE,YVR,CA,British Columbia,,,AS25820
+172.93.32.181,443,TRUE,YVR,CA,British Columbia,,,AS25820
+65.49.231.84,443,TRUE,YVR,CA,British Columbia,,,AS25820
