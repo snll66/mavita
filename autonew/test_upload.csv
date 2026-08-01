@@ -1,3 +1,0 @@
-IP地址,端口,TLS,数据中心,地区,城市,网络延迟,下载速度,ASN
-5.6.7.8,443,TRUE,HKG,HK,Hong Kong,38,6.34,AS906
-9.10.11.12,8443,TRUE,SIN,SG,Singapore,55,4.21,AS906
