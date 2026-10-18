@@ -20,6 +20,11 @@ GH_BRANCH="${BRANCH:-main}"
 BYTES="${BYTES:-20000000}"
 ROUNDS="${ROUNDS:-3}"
 
+# proxychains 要求 "type host port"（空格分隔）；从 http://host:port 拆出 host/port
+PROXY_HOSTPORT="${PROXY#*//}"
+PROXY_HOST="${PROXY_HOSTPORT%%:*}"
+PROXY_PORT="${PROXY_HOSTPORT##*:}"
+
 export http_proxy="$PROXY" https_proxy="$PROXY"
 export DEBIAN_FRONTEND=noninteractive
 
@@ -43,7 +48,7 @@ tcp_read_time_out 20000
 tcp_connect_time_out 10000
 localnet 127.0.0.0/255.0.0.0
 [ProxyList]
-http ${PROXY#*//}
+http ${PROXY_HOST} ${PROXY_PORT}
 EOF
 python3 - <<'PY'
 import json
