@@ -30,16 +30,20 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "[1/6] 依赖（优先用 /workspace 缓存，避免每次重装）"
 CACHE="${CFNB_CACHE:-$WORK/.cache}"
-mkdir -p "$CACHE/bin" "$CACHE/pydeps"
+PC_BIN=/usr/bin/proxychains4
+PC_LIB=/usr/lib/x86_64-linux-gnu/libproxychains.so.4
+mkdir -p "$CACHE/bin" "$CACHE/lib" "$CACHE/pydeps"
 
-# proxychains4：单文件静态二进制。系统没有→先用缓存恢复；缓存也没有→apt 装一次并回存缓存
-if ! command -v proxychains4 >/dev/null 2>&1; then
-  if [ -x "$CACHE/bin/proxychains4" ]; then
-    cp "$CACHE/bin/proxychains4" /usr/bin/proxychains4 && chmod 755 /usr/bin/proxychains4
-    echo "    proxychains4: 从 /workspace 缓存恢复"
+# proxychains4 = 二进制 + 运行时库(libproxychains.so.4)，两者都缓存
+if [ ! -x "$PC_BIN" ] || [ ! -f "$PC_LIB" ]; then
+  if [ -x "$CACHE/bin/proxychains4" ] && [ -f "$CACHE/lib/libproxychains.so.4" ]; then
+    cp "$CACHE/bin/proxychains4" "$PC_BIN" && chmod 755 "$PC_BIN"
+    mkdir -p "$(dirname "$PC_LIB")" && cp "$CACHE/lib/libproxychains.so.4" "$PC_LIB" && chmod 644 "$PC_LIB"
+    echo "    proxychains4: 从 /workspace 缓存恢复（bin + lib）"
   else
-    apt-get update -qq && apt-get install -y -qq proxychains4 >/dev/null
-    cp "$(command -v proxychains4)" "$CACHE/bin/proxychains4" && echo "    proxychains4: apt 安装并已缓存"
+    apt-get update -qq && apt-get install -y -qq proxychains4 libproxychains4 >/dev/null
+    cp "$PC_BIN" "$CACHE/bin/proxychains4" && cp "$PC_LIB" "$CACHE/lib/libproxychains.so.4" \
+      && echo "    proxychains4: apt 安装并已缓存（bin + lib）"
   fi
 else
   echo "    proxychains4: 系统已存在"
