@@ -85,9 +85,15 @@ json.dump(c, open("config.json", "w", encoding="utf-8"), indent=4, ensure_ascii=
 PY
 LOG="$WORK/run.log"
 proxychains4 -f "$PC" python3 main.py >"$LOG" 2>&1
-echo "    main.py 退出码=$?（完整日志：$LOG）"
+RC=$?
+echo "    main.py 退出码=$RC（完整日志：$LOG）"
 # 只回显关键几行，避免上万行进度刷屏（省 token）
 grep -aE '可用性检测通过|HTTP检测通过|结果已保存|Cloudflare DNS|Traceback|rror' "$LOG" | tail -6
+# 防空保护①：main.py 失败或 ip.txt 为空 → 立即中止，绝不继续（否则会推空文件）
+if [ "$RC" -ne 0 ] || [ ! -s ip.txt ]; then
+  echo "    [中止] main.py 失败(rc=$RC) 或 ip.txt 为空，跳过推送，避免把远端覆盖成空文件"
+  exit 1
+fi
 
 echo "[4/6] 稳定复核（串行 ${ROUNDS} 轮 × $((BYTES/1000000))MB，按最低速排序 → stable.txt）"
 : > /tmp/cfnb_stable_raw.txt
@@ -111,6 +117,12 @@ sort -t$'\t' -k2 -nr /tmp/cfnb_stable_raw.txt | while IFS=$'\t' read -r node mn;
 done
 echo "    稳定节点数：$(grep -c . stable.txt)"
 
+# 防空保护②：stable.txt 节点数过少 → 中止，绝不推送空文件
+SL=$(grep -c . stable.txt || true)
+if [ "${SL:-0}" -lt 3 ]; then
+  echo "[5/6] [中止] 稳定节点仅 ${SL:-0} 个，跳过推送（避免把远端覆盖成空文件）"
+  exit 1
+fi
 echo "[5/6] 推送 stable.txt → ${GH_OWNER}/${GH_REPO}:${GH_PATH}"
 if [ -z "${GH_TOKEN:-}" ]; then echo "    缺少 GH_TOKEN，跳过推送"; else
 python3 - <<PY
@@ -123,6 +135,10 @@ c = open("stable.txt", encoding="utf-8").read()
 r = requests.get(api, headers=H, proxies=P, params={"ref": "$GH_BRANCH"}, timeout=30)
 payload = {"message": "auto update traeip.txt (cfnb stable list)", "content": base64.b64encode(c.encode()).decode(), "branch": "$GH_BRANCH"}
 if r.status_code == 200:
+    old = base64.b64decode(r.json().get("content") or "").decode("utf-8", "ignore")
+    if old == c:
+        print("    SKIP 内容与远端一致，跳过本次提交")
+        raise SystemExit(0)
     payload["sha"] = r.json()["sha"]
 r2 = requests.put(api, headers=H, proxies=P, json=payload, timeout=30)
 if r2.status_code in (200, 201):
