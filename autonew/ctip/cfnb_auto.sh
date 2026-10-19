@@ -28,10 +28,31 @@ PROXY_PORT="${PROXY_HOSTPORT##*:}"
 export http_proxy="$PROXY" https_proxy="$PROXY"
 export DEBIAN_FRONTEND=noninteractive
 
-echo "[1/6] 安装依赖"
-apt-get update -qq
-apt-get install -y -qq python3 python3-pip curl git proxychains4 >/dev/null
-python3 -m pip install -q --root-user-action=ignore requests aiohttp brotlicffi
+echo "[1/6] 依赖（优先用 /workspace 缓存，避免每次重装）"
+CACHE="${CFNB_CACHE:-$WORK/.cache}"
+mkdir -p "$CACHE/bin" "$CACHE/pydeps"
+
+# proxychains4：单文件静态二进制。系统没有→先用缓存恢复；缓存也没有→apt 装一次并回存缓存
+if ! command -v proxychains4 >/dev/null 2>&1; then
+  if [ -x "$CACHE/bin/proxychains4" ]; then
+    cp "$CACHE/bin/proxychains4" /usr/bin/proxychains4 && chmod 755 /usr/bin/proxychains4
+    echo "    proxychains4: 从 /workspace 缓存恢复"
+  else
+    apt-get update -qq && apt-get install -y -qq proxychains4 >/dev/null
+    cp "$(command -v proxychains4)" "$CACHE/bin/proxychains4" && echo "    proxychains4: apt 安装并已缓存"
+  fi
+else
+  echo "    proxychains4: 系统已存在"
+fi
+
+# python 包：缓存到 $CACHE/pydeps，命中则跳过 pip 安装
+export PYTHONPATH="$CACHE/pydeps${PYTHONPATH:+:$PYTHONPATH}"
+if python3 -c 'import requests, aiohttp, brotlicffi' >/dev/null 2>&1; then
+  echo "    python 包: 命中缓存"
+else
+  python3 -m pip install -q --root-user-action=ignore --target "$CACHE/pydeps" requests aiohttp brotlicffi
+  echo "    python 包: 已安装并缓存到 $CACHE/pydeps"
+fi
 
 echo "[2/6] 获取 cfnb 代码"
 if [ -d "$WORK/.git" ]; then git -C "$WORK" fetch -q --depth 1 origin && git -C "$WORK" reset -q --hard origin/HEAD || true
@@ -58,7 +79,11 @@ c.update({"CF_ENABLED": False, "ENABLE_WXPUSHER": False, "GITHUB_SYNC_MAX_RETRIE
           "BANDWIDTH_SIZE_MB": 20.0, "BANDWIDTH_TIMEOUT": 20, "BANDWIDTH_WORKERS": 1})
 json.dump(c, open("config.json", "w", encoding="utf-8"), indent=4, ensure_ascii=False)
 PY
-proxychains4 -f "$PC" python3 main.py 2>&1 | tee run.log
+LOG="$WORK/run.log"
+proxychains4 -f "$PC" python3 main.py >"$LOG" 2>&1
+echo "    main.py 退出码=$?（完整日志：$LOG）"
+# 只回显关键几行，避免上万行进度刷屏（省 token）
+grep -aE '可用性检测通过|HTTP检测通过|结果已保存|Cloudflare DNS|Traceback|rror' "$LOG" | tail -6
 
 echo "[4/6] 稳定复核（串行 ${ROUNDS} 轮 × $((BYTES/1000000))MB，按最低速排序 → stable.txt）"
 : > /tmp/cfnb_stable_raw.txt
@@ -103,5 +128,5 @@ else:
 PY
 fi
 
-echo "[6/6] 完成。stable.txt："
-cat stable.txt
+echo "[6/6] 完成。stable 节点数：$(grep -c . stable.txt)（完整列表：$WORK/stable.txt）"
+head -3 stable.txt | sed 's/^/    /'
