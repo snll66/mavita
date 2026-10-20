@@ -29,7 +29,8 @@ export http_proxy="$PROXY" https_proxy="$PROXY"
 export DEBIAN_FRONTEND=noninteractive
 
 echo "[1/6] 依赖（优先用 /workspace 缓存，避免每次重装）"
-CACHE="${CFNB_CACHE:-$WORK/.cache}"
+# 缓存放在 $WORK 之外：否则第1步的 mkdir 会提前创建 $WORK，导致第2步 git clone 因“目录非空”失败
+CACHE="${CFNB_CACHE:-/workspace/.cfnb-cache}"
 PC_BIN=/usr/bin/proxychains4
 PC_LIB=/usr/lib/x86_64-linux-gnu/libproxychains.so.4
 mkdir -p "$CACHE/bin" "$CACHE/lib" "$CACHE/pydeps"
@@ -59,9 +60,16 @@ else
 fi
 
 echo "[2/6] 获取 cfnb 代码"
-if [ -d "$WORK/.git" ]; then git -C "$WORK" fetch -q --depth 1 origin && git -C "$WORK" reset -q --hard origin/HEAD || true
-else git clone -q --depth 1 https://github.com/xinyitang3/cfnb.git "$WORK"; fi
-cd "$WORK"
+if [ -d "$WORK/.git" ]; then
+  git -C "$WORK" fetch -q --depth 1 origin && git -C "$WORK" reset -q --hard origin/HEAD || true
+else
+  # $WORK 若已存在（上次残留/被提前创建），git clone 会因“目录非空”直接失败 → 先清掉再克隆
+  rm -rf "$WORK"
+  git clone -q --depth 1 https://github.com/xinyitang3/cfnb.git "$WORK" || { echo "    [中止] 克隆 cfnb 失败"; exit 1; }
+fi
+# 防空保护④：确保代码真的就位（此前的失败就是这里缺 main.py 却继续往下跑）
+[ -f "$WORK/main.py" ] || { echo "    [中止] $WORK/main.py 缺失（克隆不完整）"; exit 1; }
+cd "$WORK" || exit 1
 
 echo "[3/6] 写 proxychains 配置 + 规整 config + 运行优选"
 cat > "$PC" <<EOF
