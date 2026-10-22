@@ -87,8 +87,8 @@ python3 - <<'PY'
 import json
 c = json.load(open("config.json", encoding="utf-8"))
 c.update({"CF_ENABLED": False, "ENABLE_WXPUSHER": False, "GITHUB_SYNC_MAX_RETRIES": 0,
-          "MAX_WORKERS": 64, "BANDWIDTH_CANDIDATES": 100, "GLOBAL_TOP_N": 30,
-          "BANDWIDTH_SIZE_MB": 20.0, "BANDWIDTH_TIMEOUT": 20, "BANDWIDTH_WORKERS": 1})
+          "MAX_WORKERS": 64, "BANDWIDTH_CANDIDATES": 60, "GLOBAL_TOP_N": 30,
+          "BANDWIDTH_SIZE_MB": 20.0, "BANDWIDTH_TIMEOUT": 12, "BANDWIDTH_WORKERS": 3})
 json.dump(c, open("config.json", "w", encoding="utf-8"), indent=4, ensure_ascii=False)
 PY
 LOG="$WORK/run.log"
